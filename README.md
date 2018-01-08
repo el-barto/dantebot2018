@@ -2,9 +2,9 @@
 Very basic Twitter bot developed for #Dante2018. Every three hours, it tweets a
 stanza of the day's canto from Dante Alighieri's *Divina Commedia* in Italian.
 
-# Credits
+## Credits
 
-\#Dante2018 is an initiative launched by Pablo Maurette (@maurette79) in Twitter.
+ [\#Dante2018](https://twitter.com/search?q=%23Dante2018&src=typd) is an initiative launched by Pablo Maurette ([@maurette79](http://twitter.com/maurette79)) in Twitter.
 The idea is to read a canto a day of Dante Alighieri's *Divina Commedia*
 starting on January 1st, 2018.
 
