@@ -14,45 +14,134 @@ import os
 import re
 import time
 import random
+import json
+import urllib2
+import tempfile
 import tweepy
 from datetime import date
 
 from twitter_credentials import cons_key, cons_secret, access_token, access_token_secret
 
-INTERVAL = 60*60*3
+INTERVAL = 60*30
+HISTORY = 'tweet_history.json'
+IMAGES = 'images.json'
+
+class TweetHistory:
+
+    def __init__(self):
+        self.cantos = []
+        self.images = []
+        self.file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                 HISTORY)
+        self.load_history()
+
+    def load_history(self):
+        if not os.path.exists(self.file):
+            return True
+        fp = open(self.file, 'r')
+        js = json.load(fp)
+        self.cantos = js['cantos']
+        self.images = js['images']
+        fp.close()
+
+    def save_history(self):
+        js = {'cantos': self.cantos, 'images': self.images}
+        fp = open(self.file, 'w')
+        json.dump(js, fp)
+        fp.close()
+        return True
+
+    def add_canto(self, canto):
+        self.cantos.append(canto)
+        return self.save_history()
+
+    def add_image(self, image):
+        self.images.append(image)
+        return self.save_history()
+
+    def was_tweeted(self, type, value):
+        if type == 'canto':
+            return value in self.cantos
+        else:
+            return value in self.images
 
 class DanteBot:
     def __init__(self):
         auth = tweepy.OAuthHandler(cons_key, cons_secret)
         auth.set_access_token(access_token, access_token_secret)
-        self.tweets = []
+        self.history = TweetHistory()
         self.api = tweepy.API(auth)
 
-    def run(self, interval):
+    def run(self):
         while True:
             self.tweet()
+            interval = INTERVAL * random.randint(1,6)
+            print "Sleeping for %d seconds" % interval
             time.sleep(interval)
 
     def tweet(self):
         self._get_part_canto()
+        return random.choice([self._tweet_canto, self._tweet_image])()
+
+    def _compose_tweet(self,txt):
+        return "%s %s #Dante2018" % (self._get_prefix(), txt)
+
+    def _tweet_canto(self):
         db = self._make_db()
+        tweet = None
         for i in range(100):
-            tweet = "%s «%s» #Dante2018" % (self._get_prefix(), random.choice(db))
-            if tweet not in self.tweets:
+            tweet = self._compose_tweet("«%s»" % random.choice(db))
+            if not self.history.was_tweeted('canto', tweet):
                 break
-            else:
-                tweet = None
+
+        if tweet is None:
+            print "Cannot tweet anything new today"
+            return 0
         try:
-            if tweet is None:
-                print "Cannot tweet anything new today"
-                return 0
             self.api.update_status(tweet)
             print "Tweeted: %s" % tweet
-            self.tweets.append(tweet)
+            self.history.add_canto(tweet)
             return 0
         except tweepy.TweepError as error:
             print("Tweet failed: %s" % error.reason)
             return 1
+
+    def _tweet_image(self):
+        db = self._make_images_db()
+        img = None
+        if db:
+            for image in db:
+                if image['part'] == self._part and \
+                   int(image['canto']) == self._canto and \
+                   not self.history.was_tweeted('image', image['id']):
+                   img = image
+                   break
+        if img is None:
+            print "Cannot tweet any new image today"
+            return 0
+        img_file = self._download_image(img['image_url'])
+        tweet = self._compose_tweet('"%s" por %s (%s) [v. %s]' %
+                                    (img['title'],
+                                     img['creator'],
+                                     img['date'],
+                                     img['verse']))
+        try:
+            self.api.update_with_media(img_file, tweet)
+            print "Tweeted image: %s" % tweet
+            self.history.add_image(img['id'])
+            return 0
+        except tweepy.TweepError as error:
+            print("Image tweet failed: %s" % error.reason)
+            return 1
+
+    def _download_image(self, url):
+        tmp_file = tempfile.mkstemp('.jpg', 'dbot_',
+                                    os.path.dirname(os.path.abspath(__file__)))
+        fp = open(tmp_file[1], 'wb')
+        fp.write(urllib2.urlopen(url).read())
+        fp.close()
+        return tmp_file[1]
+
 
     def _get_part_canto(self):
         delta = date.today() - date(2018, 1, 1)
@@ -104,9 +193,16 @@ class DanteBot:
                     stanza.append({ln: line})
         return db
 
+    def _make_images_db(self):
+        f = os.path.join(os.path.dirname(os.path.abspath(__file__)), IMAGES)
+        db = []
+        with open(f, 'r') as fp:
+            db = json.load(fp)
+        return db
+
 def main(argv):
     dante = DanteBot()
-    dante.run(INTERVAL)
+    dante.run()
     return 0
 
 if __name__ == "__main__":
