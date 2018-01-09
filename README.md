@@ -9,7 +9,9 @@ For bug reports, please use the [issues section](https://github.com/el-barto/dan
 If you have any suggestions you can tweet to me at [@andresgattinoni](https://twitter.com/andresgattinoni).
 
 **Update: Jan 9, 2018:** Now, DanteBot2018 also tweets illustrations of the
-current day's canto by Gustave Doré.
+current day's canto. These include the famous engravings by Gustave Doré, images
+from the Yates Thompson 36 manuscript and drawings by Sandro Botticelli,
+Alessandro Vellutello and John Flaxman.
 
 ## Credits
 
@@ -23,7 +25,7 @@ starting on January 1st, 2018.
 
 The text of *Divina Commedia* is taken from
 [Project Gutenberg](http://www.gutenberg.org/ebooks/1012)
-and Gustave Doré's illustrations are taken from [The World of
-Dante](http://www.worldofdante.org/gallery_dore.html).
+and the illustrations are taken from [The World of
+Dante](http://www.worldofdante.org/gallery_main.html).
 
 The code of Dante Bot 2018 is licensed under GNU General Public License v. 3.

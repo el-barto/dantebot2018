@@ -59,11 +59,11 @@ class TweetHistory:
         self.images.append(image)
         return self.save_history()
 
-    def was_tweeted(self, type, value):
-        if type == 'canto':
-            return value in self.cantos
+    def was_tweeted(self, t, v):
+        if t == 'canto':
+            return v in self.cantos
         else:
-            return value in self.images
+            return v in self.images
 
 class DanteBot:
     def __init__(self):
@@ -129,6 +129,7 @@ class DanteBot:
             self.api.update_with_media(img_file, tweet)
             print "Tweeted image: %s" % img['title']
             self.history.add_image(img['id'])
+            os.remove(img_file)
             return 0
         except tweepy.TweepError as error:
             print("Image tweet failed: %s" % error.reason)
