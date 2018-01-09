@@ -127,7 +127,7 @@ class DanteBot:
                                      img['verse']))
         try:
             self.api.update_with_media(img_file, tweet)
-            print "Tweeted image: %s" % tweet
+            print "Tweeted image: %s" % img['title']
             self.history.add_image(img['id'])
             return 0
         except tweepy.TweepError as error:
