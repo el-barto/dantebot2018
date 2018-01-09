@@ -70,7 +70,7 @@ class DanteBot:
             self._canto = days - 67
 
     def _get_prefix(self):
-        return "%s.: %d" % (self._part[:3], self._canto)
+        return "%s. %d:" % (self._part[:3], self._canto)
 
     def _get_file(self):
         return os.path.join(os.path.dirname(os.path.abspath(__file__)),
