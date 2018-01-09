@@ -90,7 +90,7 @@ class DanteBot:
         db = self._make_db()
         tweet = None
         for i in range(100):
-            tweet = self._compose_tweet("«%s»" % random.choice(db))
+            tweet = self._compose_tweet(random.choice(db))
             if not self.history.was_tweeted('canto', tweet):
                 break
 
@@ -110,21 +110,24 @@ class DanteBot:
         db = self._make_images_db()
         img = None
         if db:
+            img_choices = []
             for image in db:
                 if image['part'] == self._part and \
                    int(image['canto']) == self._canto and \
                    not self.history.was_tweeted('image', image['id']):
-                   img = image
-                   break
+                   img_choices.append(image)
+            if img_choices:
+                img = random.choice(img_choices)
         if img is None:
             print "Cannot tweet any new image today"
             return 0
         img_file = self._download_image(img['image_url'])
-        tweet = self._compose_tweet('"%s" por %s (%s) [v. %s]' %
+        tweet = self._compose_tweet('"%s" por %s (%s) [v. %s]. Fuente: %s' %
                                     (img['title'],
                                      img['creator'],
                                      img['date'],
-                                     img['verse']))
+                                     img['verse'],
+                                     img['link_url']))
         try:
             self.api.update_with_media(img_file, tweet)
             print "Tweeted image: %s" % img['title']
@@ -184,9 +187,9 @@ class DanteBot:
                     if len(stanza) > 0:
                         txt = " / ".join([i.values()[0] for i in stanza])
                         if len(stanza) == 1:
-                            txt = '%s (%s)' % (txt, stanza[0].keys()[0])
+                            txt = '"%s" (%s)' % (txt, stanza[0].keys()[0])
                         else:
-                            txt = '%s (%s-%s)' % (txt, stanza[0].keys()[0], stanza[-1].keys()[0])
+                            txt = '"%s" (%s-%s)' % (txt, stanza[0].keys()[0], stanza[-1].keys()[0])
                         db.append(txt)
                         stanza = []
                 else:
