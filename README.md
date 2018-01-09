@@ -1,7 +1,7 @@
 # Dante Bot 2018
-Very basic Twitter bot developed for #Dante2018. Every three hours, it tweets a
+Very basic Twitter bot developed for #Dante2018. It tweets a
 stanza of the current day's canto from Dante Alighieri's *Divina Commedia*
-in Italian.
+in Italian at a random interval of time between 30 minutes and 3 hours.
 
 **Update: Jan 9, 2018:** Now, DanteBot2018 also tweets illustrations of the
 current day's canto by Gustave Doré.
