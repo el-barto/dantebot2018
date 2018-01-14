@@ -31,6 +31,7 @@ class TweetHistory:
     def __init__(self):
         self.cantos = []
         self.images = []
+        self.rts = []
         self.file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                  HISTORY)
         self.load_history()
@@ -40,30 +41,36 @@ class TweetHistory:
             return True
         fp = open(self.file, 'r')
         js = json.load(fp)
-        self.cantos = js['cantos']
-        self.images = js['images']
+        for k in ('cantos', 'images', 'rts'):
+            if k in js.keys():
+                self.__dict__[k] = js[k]
         fp.close()
 
     def save_history(self):
-        js = {'cantos': self.cantos, 'images': self.images}
+        js = {'cantos': self.cantos, 'images': self.images, 'rts': self.rts}
         fp = open(self.file, 'w')
         json.dump(js, fp)
         fp.close()
         return True
 
-    def add_canto(self, canto):
-        self.cantos.append(canto)
+    def _add(self, k, v):
+        # To-Do: implement @property decorator
+        self.__dict__[k].append(v)
         return self.save_history()
+
+    def add_canto(self, canto):
+        return self._add('cantos', canto)
 
     def add_image(self, image):
-        self.images.append(image)
-        return self.save_history()
+        return self._add('images', image)
+
+    def add_rt(self, status_id):
+        return self._add('rts', status_id)
 
     def was_tweeted(self, t, v):
-        if t == 'canto':
-            return v in self.cantos
-        else:
-            return v in self.images
+        if t in self.__dict__:
+            return v in self.__dict__[t]
+        return False
 
 class DanteBot:
     def __init__(self):
@@ -74,6 +81,7 @@ class DanteBot:
 
     def run(self):
         while True:
+            self.handle_retweets()
             self.tweet()
             interval = INTERVAL * random.randint(1,6)
             print "Sleeping for %d seconds" % interval
@@ -82,6 +90,22 @@ class DanteBot:
     def tweet(self):
         self._get_part_canto()
         return random.choice([self._tweet_canto, self._tweet_image])()
+
+    def handle_retweets(self):
+        return self._rt_autodante()
+
+    def _rt_autodante(self):
+        ad = self.api.get_user('autodante')
+        if ad and not self.history.was_tweeted('rts', ad.status.id):
+            try:
+                self.api.retweet(ad.status.id)
+                print "Retweeted last tweet from @autodante: '%s'" % ad.status.text
+                print "Sleeping for 5 minutes"
+                time.sleep(60*5)
+            except tweepy.TweepError as error:
+                print("Tweet failed: %s" % error.reason)
+                return False
+        return True
 
     def _compose_tweet(self,txt):
         return "%s %s #Dante2018" % (self._get_prefix(), txt)
@@ -101,10 +125,10 @@ class DanteBot:
             self.api.update_status(tweet)
             print "Tweeted: %s" % tweet
             self.history.add_canto(tweet)
-            return 0
+            return True
         except tweepy.TweepError as error:
             print("Tweet failed: %s" % error.reason)
-            return 1
+            return False
 
     def _tweet_image(self):
         db = self._make_images_db()
@@ -120,7 +144,7 @@ class DanteBot:
                 img = random.choice(img_choices)
         if img is None:
             print "Cannot tweet any new image today"
-            return 0
+            return False
         img_file = self._download_image(img['image_url'])
         tweet = self._compose_tweet('"%s" por %s (%s) [v. %s]. Fuente: %s' %
                                     (img['title'],
@@ -133,10 +157,10 @@ class DanteBot:
             print "Tweeted image: %s" % img['title']
             self.history.add_image(img['id'])
             os.remove(img_file)
-            return 0
+            return True
         except tweepy.TweepError as error:
             print("Image tweet failed: %s" % error.reason)
-            return 1
+            return False
 
     def _download_image(self, url):
         tmp_file = tempfile.mkstemp('.jpg', 'dbot_',

@@ -13,6 +13,9 @@ current day's canto. These include the famous engravings by Gustave Doré, image
 from the Yates Thompson 36 manuscript and drawings by Sandro Botticelli,
 Alessandro Vellutello and John Flaxman.
 
+**Update: Jan 14, 2018:** DanteBot2018 will retweet each day
+[@autodante](https://twitter.com/autodante)'s tweet of the current day's canto.
+
 ## Credits
 
 &copy; 2018, Andrés Gattinoni.
