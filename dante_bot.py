@@ -99,7 +99,7 @@ class DanteBot:
         if ad and not self.history.was_tweeted('rts', ad.status.id):
             try:
                 self.api.retweet(ad.status.id)
-                print "Retweeted last tweet from @autodante: '%s'" % ad.status.text
+                print "Retweeted last tweet from @autodante. ID: '%s'" % ad.status.id
                 self.history.add_rt(ad.status.id)
                 print "Sleeping for 5 minutes"
                 time.sleep(60*5)
