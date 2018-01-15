@@ -100,6 +100,7 @@ class DanteBot:
             try:
                 self.api.retweet(ad.status.id)
                 print "Retweeted last tweet from @autodante: '%s'" % ad.status.text
+                self.history.add_rt(ad.status.id)
                 print "Sleeping for 5 minutes"
                 time.sleep(60*5)
             except tweepy.TweepError as error:
@@ -138,7 +139,7 @@ class DanteBot:
             for image in db:
                 if image['part'] == self._part and \
                    int(image['canto']) == self._canto and \
-                   not self.history.was_tweeted('image', image['id']):
+                   not self.history.was_tweeted('images', image['id']):
                    img_choices.append(image)
             if img_choices:
                 img = random.choice(img_choices)
