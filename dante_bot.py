@@ -225,8 +225,14 @@ class DanteBot:
                 break
         if found:
             print "Retweeting ID: %s" % tweet.id
-            if self.api.retweet(tweet.id):
-                self.history.add_highlight(tweet.id)
+            try:
+                if self.api.retweet(tweet.id):
+                    self.history.add_highlight(tweet.id)
+                    print "Retweeted highlight: %s" % tweet.id
+            except tweepy.TweepError as error:
+                print("Failed to retweet highlight: %s" % error.reason)
+                return False
+        return True
 
     def _get_prefix(self):
         return "%s. %d:" % (self._part[:3], self._canto)
