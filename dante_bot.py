@@ -32,6 +32,7 @@ class TweetHistory:
         self.cantos = []
         self.images = []
         self.rts = []
+        self.highlights = []
         self.file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                  HISTORY)
         self.load_history()
@@ -41,13 +42,16 @@ class TweetHistory:
             return True
         fp = open(self.file, 'r')
         js = json.load(fp)
-        for k in ('cantos', 'images', 'rts'):
+        for k in ('cantos', 'images', 'rts', 'highlights'):
             if k in js.keys():
                 self.__dict__[k] = js[k]
         fp.close()
 
     def save_history(self):
-        js = {'cantos': self.cantos, 'images': self.images, 'rts': self.rts}
+        js = {'cantos': self.cantos, 
+              'images': self.images, 
+              'rts': self.rts, 
+              'highlights': self.highlights}
         fp = open(self.file, 'w')
         json.dump(js, fp)
         fp.close()
@@ -67,6 +71,9 @@ class TweetHistory:
     def add_rt(self, status_id):
         return self._add('rts', status_id)
 
+    def add_highlight(self, status_id):
+        return self._add('highlights', status_id)
+
     def was_tweeted(self, t, v):
         if t in self.__dict__:
             return v in self.__dict__[t]
@@ -74,6 +81,7 @@ class TweetHistory:
 
 class DanteBot:
     def __init__(self):
+        self.old_posts = []
         auth = tweepy.OAuthHandler(cons_key, cons_secret)
         auth.set_access_token(access_token, access_token_secret)
         self.history = TweetHistory()
@@ -88,13 +96,21 @@ class DanteBot:
             time.sleep(interval)
 
     def tweet(self):
-        self._get_part_canto()
-        return random.choice([self._tweet_canto, self._tweet_image])()
+        active = self._get_part_canto()
+        if active:            
+            return random.choice([self._tweet_canto, self._tweet_image])()
+        else:
+            return self._highlight()
 
     def handle_retweets(self):
         return self._rt_autodante()
 
     def _rt_autodante(self):
+        delta = date.today() - date(2018, 1, 1)
+        if (delta.days > 100):
+            # #Dante2018 is over
+            return True
+
         ad = self.api.get_user('autodante')
         if ad and not self.history.was_tweeted('rts', ad.status.id):
             try:
@@ -177,15 +193,40 @@ class DanteBot:
         self._part = ''
         days = delta.days + 1
         self._canto = 0
+        active = False
         if (days <= 34):
             self._part = 'Inferno'
             self._canto = days
+            active = True
         elif (days > 34 and days <= 67):
             self._part = 'Purgatorio'
             self._canto = days - 34
+            active = True
         elif (days > 67 and days <= 100):
             self._part = 'Paradiso'
             self._canto = days - 67
+            active = True
+        return active
+
+    def _highlight(self):
+        posts = self._make_old_db()
+        found = False
+        tweet = None
+        n = 0
+        print "Posts: %d" % len(posts)
+        while not found:
+            n += 1
+            tweet = random.choice(posts)
+            if not self.history.was_tweeted('highlights', tweet.id):
+                if tweet.retweet_count > 0 or tweet.favorite_count > 0:
+                    print "Found untweeted highlight: %s" % tweet.id
+                    found = True
+            if n > len(posts):
+                break
+        if found:
+            print "Retweeting ID: %s" % tweet.id
+            if self.api.retweet(tweet.id):
+                self.history.add_highlight(tweet.id)
 
     def _get_prefix(self):
         return "%s. %d:" % (self._part[:3], self._canto)
@@ -228,6 +269,18 @@ class DanteBot:
         with open(f, 'r') as fp:
             db = json.load(fp)
         return db
+
+    def _make_old_db(self):
+        if not self.old_posts:
+            last_id = None
+            while True:
+                tweets = self.api.user_timeline(screen_name='dantebot2018', since_id=last_id)
+                if not tweets:
+                    break
+                self.old_posts = self.old_posts + tweets
+                last_id = tweets[-1].id
+        return self.old_posts
+
 
 def main(argv):
     dante = DanteBot()
