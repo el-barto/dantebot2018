@@ -16,6 +16,9 @@ Alessandro Vellutello and John Flaxman.
 **Update: Jan 14, 2018:** DanteBot2018 will retweet each day
 [@autodante](https://twitter.com/autodante)'s tweet of the current day's canto.
 
+**Update: Apr 12, 2018:** After April 10th (the end of #Dante2018), DanteBot2018 
+will retweet highlights (past tweets with at least one fav or RT).
+
 ## Credits
 
 &copy; 2018, Andrés Gattinoni.
