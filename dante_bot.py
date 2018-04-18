@@ -278,13 +278,8 @@ class DanteBot:
 
     def _make_old_db(self):
         if not self.old_posts:
-            last_id = None
-            while True:
-                tweets = self.api.user_timeline(screen_name='dantebot2018', since_id=last_id)
-                if not tweets:
-                    break
-                self.old_posts = self.old_posts + tweets
-                last_id = tweets[-1].id
+            for tweet in tweepy.Cursor(self.api.user_timeline, screen_name='dantebot2018').items():
+                self.old_posts.append(tweet)
         return self.old_posts
 
 
